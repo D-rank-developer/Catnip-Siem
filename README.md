@@ -1,31 +1,73 @@
+<div align="center">
+
 # Catnip Games International — Security Monitoring SIEM
 
-[![Graylog](https://img.shields.io/badge/Graylog-6.1-orange)](https://graylog.org)
-[![OpenSearch](https://img.shields.io/badge/OpenSearch-2.15.0-blue)](https://opensearch.org)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7-green)](https://mongodb.com)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)](https://docker.com)
-[![Python](https://img.shields.io/badge/Python-3.x-yellow)](https://python.org)
-[![React](https://img.shields.io/badge/React-18-61DAFB)](https://react.dev)
+**A fully operational AI-powered SIEM for a fictional gaming company, built for the Cyber Security Automation module at the University of Roehampton.**
+
+[![Graylog](https://img.shields.io/badge/Graylog-6.1-orange?style=flat-square)](https://graylog.org)
+[![OpenSearch](https://img.shields.io/badge/OpenSearch-2.15.0-blue?style=flat-square)](https://opensearch.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7-green?style=flat-square)](https://mongodb.com)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
+[![Python](https://img.shields.io/badge/Python-3.9+-yellow?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev)
+
+</div>
 
 ---
 
-## What This Project Is
+## Overview
 
-A fully operational AI-powered SIEM (Security Information and Event Management) system built for the **Cyber Security Automation** module at the University of Roehampton.
+The system monitors a fictional gaming company (Catnip Games International) and integrates real-time log ingestion, machine learning threat detection, and an AI-powered analyst interface into a single deployable stack.
 
-The system monitors a fictional gaming company (Catnip Games International) and includes:
+| Component | Description |
+|---|---|
+| **Graylog** | Real-time log ingestion, stream routing, dashboards, and rule-based alerting |
+| **OmniLog** | AI-powered security analyst interface (React frontend + Flask API) powered by Claude |
+| **ML Engine** | Machine learning threat severity scoring and zero-day anomaly detection |
+| **Live Attack Map** | Real-time geographic visualisation of attack sources |
+| **Log Generator** | Simulates 300 game servers, player authentication, DDoS, and SSH attacks |
 
-- **Graylog** — real-time log ingestion, stream routing, dashboards, and rule-based alerting
-- **OmniLog** — AI-powered security analyst interface (React frontend + Flask API) powered by Claude
-- **ML Engine** — machine learning threat severity scoring and zero-day anomaly detection
-- **Live Attack Map** — real-time geographic visualisation of attack sources
-- **Log Generator** — simulates 300 game servers, player authentication, DDoS, and SSH attacks
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+  - [1. Clone the repository](#1-clone-the-repository)
+  - [2. Create your environment file](#2-create-your-environment-file)
+  - [3. Run the bootstrap](#3-run-the-bootstrap)
+  - [4. Open the interfaces](#4-open-the-interfaces)
+- [After a Restart](#after-a-restart)
+- [Stopping Everything](#stopping-everything)
+- [OmniLog AI Assistant](#omnilog-ai-assistant)
+- [ML Engine](#ml-engine)
+- [Repository Structure](#repository-structure)
+- [Environment Variables](#environment-variables)
+- [Graylog Content Pack](#graylog-content-pack)
+- [Dashboards](#dashboards)
+- [Alert Rules](#alert-rules)
+- [Troubleshooting](#troubleshooting)
+- [Known Limitations](#known-limitations)
+- [Project Team](#project-team)
+- [Module Context](#module-context)
+
+---
+
+## Architecture
+
+<div align="center">
+  <img src="architecture.svg" alt="Catnip SIEM architecture diagram" width="720"/>
+</div>
+
+> [!IMPORTANT]
+> **GELF TCP not UDP** — Docker Desktop on Windows silently drops UDP port forwarding for port 12201. The log generator uses GELF over TCP (null-byte delimited) which Docker Desktop forwards reliably. The Graylog content pack includes a GELF TCP input on port 12201. Do not change this to UDP — messages will be silently lost.
 
 ---
 
 ## Prerequisites
 
-Install all of these before you begin. The bootstrap will check for them and tell you if anything is missing.
+Install all of the following before you begin. The bootstrap will check for them and tell you if anything is missing.
 
 | Tool | Minimum Version | Download |
 |---|---|---|
@@ -34,22 +76,23 @@ Install all of these before you begin. The bootstrap will check for them and tel
 | Python | 3.9+ | [python.org](https://python.org) |
 | Node.js | 18+ | [nodejs.org](https://nodejs.org) |
 
-> **Windows users:** Make sure Docker Desktop is fully started (taskbar icon shows "Engine running") before running the bootstrap. If you see "Starting the Docker Engine..." indefinitely, open Task Manager, end any `com.docker.backend.exe` processes, and restart Docker Desktop.
-
-> **Linux / WSL users:** The bootstrap sets the OpenSearch kernel parameter automatically, but you must run it with a user that has `sudo` access.
+> [!NOTE]
+> **Windows users** — Make sure Docker Desktop is fully started (taskbar icon shows "Engine running") before running the bootstrap. If you see "Starting the Docker Engine..." indefinitely, open Task Manager, end any `com.docker.backend.exe` processes, and restart Docker Desktop.
+>
+> **Linux / WSL users** — The bootstrap sets the OpenSearch kernel parameter automatically, but you must run it with a user that has `sudo` access.
 
 ---
 
-## Getting Started — Clone and Run
+## Quick Start
 
-### Step 1 — Clone the repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/D-rank-developer/Catnip-Siem.git
 cd Catnip-Siem
 ```
 
-### Step 2 — Create your environment file
+### 2. Create your environment file
 
 ```bash
 # Mac / Linux / WSL
@@ -95,29 +138,48 @@ SMTP_PASSWORD=
 ANTHROPIC_API_KEY=
 ```
 
-> **Important:** `GRAYLOG_ADMIN_PASSWORD` must be the exact plaintext whose SHA256 hash you put in `GRAYLOG_ROOT_PASSWORD_SHA2`. The example values above (`admin` / its SHA256 hash) work together — change both to something stronger in production.
+> [!WARNING]
+> `GRAYLOG_ADMIN_PASSWORD` must be the exact plaintext whose SHA256 hash you put in `GRAYLOG_ROOT_PASSWORD_SHA2`. The example values above (`admin` / its SHA256 hash) work together — change both to something stronger in production.
 
-### Step 3 — Run the bootstrap
+### 3. Run the bootstrap
 
 The bootstrap script does everything: starts Docker, waits for Graylog, installs the content pack (restoring all streams, dashboards, alert rules, extractors), installs Python dependencies, starts the ML service, OmniLog API, log generator, frontend, and runs a smoke test.
 
-**Mac / Linux / WSL:**
+<table>
+<tr>
+<th>Mac / Linux / WSL</th>
+<th>Windows PowerShell</th>
+<th>Windows CMD</th>
+</tr>
+<tr>
+<td>
+
 ```bash
 chmod +x bootstrap.sh
 ./bootstrap.sh
 ```
 
-**Windows PowerShell** (run as normal user, not administrator):
+</td>
+<td>
+
 ```powershell
 .\bootstrap.ps1
 ```
 
-**Windows CMD:**
+</td>
+<td>
+
 ```
 bootstrap.bat
 ```
 
-The script takes 2–4 minutes on first run (mostly waiting for Graylog and OpenSearch to initialise). You will see step-by-step progress:
+</td>
+</tr>
+</table>
+
+> Run PowerShell as a normal user, not administrator.
+
+The script takes **2–4 minutes** on first run (mostly waiting for Graylog and OpenSearch to initialise). You will see step-by-step progress:
 
 ```
 =============================================================
@@ -170,14 +232,14 @@ The script takes 2–4 minutes on first run (mostly waiting for Graylog and Open
   ML Service:    http://localhost:5001
 ```
 
-### Step 4 — Open the interfaces
+### 4. Open the interfaces
 
 | URL | What it is |
 |---|---|
-| http://localhost:9000 | Graylog — dashboards, streams, alert rules, raw log search |
-| http://localhost:5173 | OmniLog — AI analyst, zero-day alerts, threat reports |
-| http://localhost:8888 | Live attack map — geographic threat visualisation |
-| http://localhost:5002/status | OmniLog API health check (JSON) |
+| <http://localhost:9000> | **Graylog** — dashboards, streams, alert rules, raw log search |
+| <http://localhost:5173> | **OmniLog** — AI analyst, zero-day alerts, threat reports |
+| <http://localhost:8888> | **Live attack map** — geographic threat visualisation |
+| <http://localhost:5002/status> | **OmniLog API** health check (JSON) |
 
 Log into Graylog with username `admin` and the password from `GRAYLOG_ADMIN_PASSWORD` in your `.env`.
 
@@ -192,7 +254,8 @@ When you close your laptop, shut down, or restart WSL, Docker containers stop an
 .\bootstrap.ps1       # Windows PowerShell
 ```
 
-Or restart manually if you prefer:
+<details>
+<summary><strong>Or restart manually</strong></summary>
 
 ```bash
 # 1. Start Docker containers
@@ -218,6 +281,8 @@ cd omnilog && npm run dev &
 cd omnilog; npm run dev   # PowerShell (run in separate terminal)
 ```
 
+</details>
+
 ---
 
 ## Stopping Everything
@@ -240,6 +305,7 @@ docker compose down
 ```
 
 To also delete all stored log data and start completely fresh:
+
 ```bash
 docker compose down -v    # WARNING: deletes all Graylog data
 ```
@@ -284,6 +350,7 @@ The Zero-Day panel runs IsolationForest (unsupervised ML) over the last 200 even
 2. **High-confidence ML detections** — events the ML classifier rates as high/critical severity even though no Graylog alert rule fired
 
 Each threat card shows:
+
 - **ML assessment** — what the ML model detected, with confidence percentage
 - **Graylog assessment** — what Graylog's rule-based system saw for the same event
 - **Delta** — a plain-English explanation of the difference (e.g. "Graylog classified as 'Normal Traffic [info]' but ML identified 'SSH Brute Force' with 87% confidence. Severity escalated by ML: info → high.")
@@ -314,14 +381,6 @@ The pre-trained severity model (`models/catnip_severity_model.pkl`) ships with t
 
 ---
 
-## Architecture
-![dsf](https://github.com/D-rank-developer/Catnip-Siem/blob/7bd00b63f5248a301d45914f38d6887a24e2c7c2/architecture.svg)
-
-
-> **Important — GELF TCP not UDP:** Docker Desktop on Windows silently drops UDP port forwarding for port 12201. The log generator uses GELF over TCP (null-byte delimited) which Docker Desktop forwards reliably. The Graylog content pack includes a GELF TCP input on port 12201. Do not change this to UDP — messages will be silently lost.
-
----
-
 ## Repository Structure
 
 ```
@@ -337,7 +396,7 @@ Catnip-Siem/
 │   │                               # (GELF TCP → Graylog port 12201)
 │   ├── omnilog_api.py              # Flask API — Claude + Graylog + ML bridge
 │   ├── ml_service.py               # Flask ML service (port 5001)
-│   └── report_generator.py        # CLI security report
+│   └── report_generator.py         # CLI security report
 │
 ├── ml/
 │   ├── model.py                    # GradientBoosting severity classifier
@@ -374,24 +433,24 @@ Catnip-Siem/
 
 ---
 
-## Environment Variables Reference
+## Environment Variables
 
 | Variable | Required | Description |
-|---|---|---|
-| `GRAYLOG_PASSWORD_SECRET` | Yes | Random 64+ char string for Graylog encryption |
-| `GRAYLOG_ROOT_PASSWORD_SHA2` | Yes | SHA256 hash of the admin password |
-| `GRAYLOG_ADMIN_PASSWORD` | Yes | Plaintext admin password (must match hash above) |
-| `GRAYLOG_HTTP_EXTERNAL_URI` | Yes | `http://localhost:9000/` for local dev |
-| `OPENSEARCH_ADMIN_PASSWORD` | Yes | Min 8 chars, 1 uppercase, 1 number, 1 special char |
-| `SMTP_HOST` | No | Email server for alert notifications |
-| `SMTP_PORT` | No | Usually 587 for TLS |
-| `SMTP_USER` | No | Email address for sending alerts |
-| `SMTP_PASSWORD` | No | Email password or app-specific password |
-| `ANTHROPIC_API_KEY` | No | Enables Claude AI in OmniLog (falls back to keyword matching without it) |
-| `GRAYLOG_HOST` | No | Defaults to `localhost` |
-| `GRAYLOG_PORT` | No | Defaults to `9000` |
-| `ML_SERVICE_URL` | No | Defaults to `http://localhost:5001` |
-| `OMNILOG_PORT` | No | Defaults to `5002` |
+|---|:---:|---|
+| `GRAYLOG_PASSWORD_SECRET` | ✅ | Random 64+ char string for Graylog encryption |
+| `GRAYLOG_ROOT_PASSWORD_SHA2` | ✅ | SHA256 hash of the admin password |
+| `GRAYLOG_ADMIN_PASSWORD` | ✅ | Plaintext admin password (must match hash above) |
+| `GRAYLOG_HTTP_EXTERNAL_URI` | ✅ | `http://localhost:9000/` for local dev |
+| `OPENSEARCH_ADMIN_PASSWORD` | ✅ | Min 8 chars, 1 uppercase, 1 number, 1 special char |
+| `SMTP_HOST` | ⚪ | Email server for alert notifications |
+| `SMTP_PORT` | ⚪ | Usually 587 for TLS |
+| `SMTP_USER` | ⚪ | Email address for sending alerts |
+| `SMTP_PASSWORD` | ⚪ | Email password or app-specific password |
+| `ANTHROPIC_API_KEY` | ⚪ | Enables Claude AI in OmniLog (falls back to keyword matching without it) |
+| `GRAYLOG_HOST` | ⚪ | Defaults to `localhost` |
+| `GRAYLOG_PORT` | ⚪ | Defaults to `9000` |
+| `ML_SERVICE_URL` | ⚪ | Defaults to `http://localhost:5001` |
+| `OMNILOG_PORT` | ⚪ | Defaults to `5002` |
 
 ---
 
@@ -410,9 +469,37 @@ If the content pack install fails, you can install it manually: **Graylog UI →
 
 ---
 
+## Dashboards
+
+Five dashboards answer specific security questions:
+
+| Dashboard | What it shows |
+|---|---|
+| **Security Overview** | Overall threat picture — event totals, timeline, type breakdown |
+| **SSH Auth Monitoring** | Brute force attacks — failed logins over time, attacking IPs, targeted usernames |
+| **Game Server Health** | DDoS attacks — traffic anomalies, targeted servers, attack timeline |
+| **Player Auth Monitoring** | Credential stuffing — login outcomes, targeted players |
+| **Dev Environment Security** | Dev server access — suspicious logins, targeted accounts |
+
+---
+
+## Alert Rules
+
+Four automated alerts fire email notifications when thresholds are crossed:
+
+| Alert | Trigger condition |
+|---|---|
+| **SSH Brute Force** | 10+ failed SSH logins from one IP within 5 minutes |
+| **DDoS Attack** | Any DDoS event detected (immediate, no threshold) |
+| **Credential Stuffing** | 20+ stuffing attempts from one IP within 5 minutes |
+| **Suspicious Dev Login** | Any suspicious login to a developer server |
+
+---
+
 ## Troubleshooting
 
-### OmniLog shows "DISCONNECTED" or active alerts is 0
+<details>
+<summary><strong>OmniLog shows "DISCONNECTED" or active alerts is 0</strong></summary>
 
 Check that all services are running:
 
@@ -429,6 +516,7 @@ curl http://localhost:5002/status
 ```
 
 Expected output from the status check:
+
 ```json
 {
   "graylog_connected": true,
@@ -451,14 +539,20 @@ Stop-Process -Name python -Force
 Start-Process python -ArgumentList "scripts/log_generator.py"
 ```
 
-### "graylog_connected: false"
+</details>
+
+<details>
+<summary><strong><code>graylog_connected: false</code></strong></summary>
 
 1. Make sure the Docker containers are running: `docker compose ps`
-2. Try opening http://localhost:9000 in a browser — if it loads, Graylog is up
+2. Try opening <http://localhost:9000> in a browser — if it loads, Graylog is up
 3. Check your `.env` has `GRAYLOG_ADMIN_PASSWORD` set to the correct plaintext password
 4. Restart the OmniLog API: kill its process and run `python scripts/omnilog_api.py` again
 
-### Graylog receives 0 logs (total_events_last_hour stays 0)
+</details>
+
+<details>
+<summary><strong>Graylog receives 0 logs (<code>total_events_last_hour</code> stays 0)</strong></summary>
 
 This is almost always a GELF TCP delivery issue. Verify:
 
@@ -472,7 +566,10 @@ netstat -an | grep 12201
 
 If you only see `UDP 0.0.0.0:12201` but no TCP line, run `docker compose up -d` to recreate the container (which now maps TCP 12201) and then create the GELF TCP input in Graylog: **System → Inputs → Launch new input → GELF TCP → port 12201 → Global → Save**.
 
-### OpenSearch container keeps restarting
+</details>
+
+<details>
+<summary><strong>OpenSearch container keeps restarting</strong></summary>
 
 ```bash
 # Linux/WSL only — set the required kernel parameter
@@ -483,7 +580,10 @@ docker compose up -d
 
 On Mac and Windows, Docker Desktop manages this automatically.
 
-### OmniLog UI shows blank screen or won't load
+</details>
+
+<details>
+<summary><strong>OmniLog UI shows blank screen or won't load</strong></summary>
 
 ```bash
 # Make sure npm dependencies are installed
@@ -493,13 +593,17 @@ npm run dev
 ```
 
 If you see TypeScript errors, try clearing the Vite cache:
+
 ```bash
 cd omnilog
 rm -rf node_modules/.vite
 npm run dev
 ```
 
-### Graylog shows duplicate streams or inputs after reinstall
+</details>
+
+<details>
+<summary><strong>Graylog shows duplicate streams or inputs after reinstall</strong></summary>
 
 This happens when `docker compose down -v` is run from one Docker context (e.g. WSL) while Docker Desktop was managing the containers. Run:
 
@@ -510,63 +614,39 @@ docker compose up -d
 ./bootstrap.sh
 ```
 
-### OmniLog falls back to mock data / no Claude responses
+</details>
 
-Set `ANTHROPIC_API_KEY` in your `.env` file. Get a key at https://console.anthropic.com. Without it, the chat interface still works but uses keyword-based analysis instead of Claude.
+<details>
+<summary><strong>OmniLog falls back to mock data / no Claude responses</strong></summary>
 
----
+Set `ANTHROPIC_API_KEY` in your `.env` file. Get a key at <https://console.anthropic.com>. Without it, the chat interface still works but uses keyword-based analysis instead of Claude.
 
-## Dashboards
-
-Five dashboards answer specific security questions:
-
-| Dashboard | What it shows |
-|---|---|
-| Security Overview | Overall threat picture — event totals, timeline, type breakdown |
-| SSH Auth Monitoring | Brute force attacks — failed logins over time, attacking IPs, targeted usernames |
-| Game Server Health | DDoS attacks — traffic anomalies, targeted servers, attack timeline |
-| Player Auth Monitoring | Credential stuffing — login outcomes, targeted players |
-| Dev Environment Security | Dev server access — suspicious logins, targeted accounts |
-
----
-
-## Alert Rules
-
-Four automated alerts fire email notifications when thresholds are crossed:
-
-| Alert | Trigger condition |
-|---|---|
-| SSH Brute Force | 10+ failed SSH logins from one IP within 5 minutes |
-| DDoS Attack | Any DDoS event detected (immediate, no threshold) |
-| Credential Stuffing | 20+ stuffing attempts from one IP within 5 minutes |
-| Suspicious Dev Login | Any suspicious login to a developer server |
+</details>
 
 ---
 
 ## Known Limitations
 
-**GELF UDP silently dropped on Windows:** Docker Desktop on Windows does not reliably forward UDP ports from the host to containers. This project uses GELF over TCP (port 12201) instead. Do not change the log generator back to UDP — all messages will be silently discarded.
-
-**Simulated infrastructure:** The log generator replaces real game server infrastructure. In production, rsyslog agents on each server would replace the generator.
-
-**Single-node deployment:** No high availability. A production deployment would require a multi-node OpenSearch cluster and Graylog cluster.
-
-**ML model is pre-trained:** The severity model was trained on synthetic Catnip Games log data. It will still work on real infrastructure but may need retraining on live data for optimal accuracy.
-
-**Claude API key optional:** Without `ANTHROPIC_API_KEY`, OmniLog's chat uses simple keyword-to-query translation. The zero-day alerts, dashboard counts, and print report all work without it.
+| Limitation | Detail |
+|---|---|
+| **GELF UDP silently dropped on Windows** | Docker Desktop on Windows does not reliably forward UDP ports from the host to containers. This project uses GELF over TCP (port 12201) instead. Do not change the log generator back to UDP — all messages will be silently discarded. |
+| **Simulated infrastructure** | The log generator replaces real game server infrastructure. In production, rsyslog agents on each server would replace the generator. |
+| **Single-node deployment** | No high availability. A production deployment would require a multi-node OpenSearch cluster and Graylog cluster. |
+| **ML model is pre-trained** | The severity model was trained on synthetic Catnip Games log data. It will still work on real infrastructure but may need retraining on live data for optimal accuracy. |
+| **Claude API key optional** | Without `ANTHROPIC_API_KEY`, OmniLog's chat uses simple keyword-to-query translation. The zero-day alerts, dashboard counts, and print report all work without it. |
 
 ---
 
 ## Project Team
 
-| Name | Contribution |
-|---|---|
-| Adebowale (Team Lead) | Docker infrastructure, log generator, report script, bootstrap scripts, architecture |
-| Stephen | Graylog platform deployment and maintenance |
-| Lekan | Inputs, extractors, rsyslog configuration, streams |
-| Faith | Alert event definitions, notifications, remediation procedures |
-| Akhamas | 5 dashboards, 20 widgets, visualisation design |
-| Chamberlain | OmniLog AI frontend + API, ML service integration, zero-day detection, CVE mapping, print report, branding, debugging |
+| Name | Role | Contribution |
+|---|---|---|
+| **Adebowale** | Team Lead | Docker infrastructure, log generator, report script, bootstrap scripts, architecture |
+| **Stephen** | Platform Engineer | Graylog platform deployment and maintenance |
+| **Lekan** | Ingestion Engineer | Inputs, extractors, rsyslog configuration, streams |
+| **Faith** | Detection Engineer | Alert event definitions, notifications, remediation procedures |
+| **Akhamas** | Visualisation Lead | 5 dashboards, 20 widgets, visualisation design |
+| **Chamberlain** | AI / ML Engineer | OmniLog AI frontend + API, ML service integration, zero-day detection, CVE mapping, print report, branding, debugging |
 
 ---
 
@@ -574,6 +654,12 @@ Four automated alerts fire email notifications when thresholds are crossed:
 
 Built for the **Cyber Security Automation** module at the University of Roehampton.
 
-- **Work Role:** DCWF 511 — Cyber Defense Analyst
-- **Competency:** Uses data collected from cyber defense tools to analyse events for the purposes of mitigating threats
-- **Assessment:** In-lab team demonstration with individual Q&A
+- **Work Role** — DCWF 511 — Cyber Defense Analyst
+- **Competency** — Uses data collected from cyber defense tools to analyse events for the purposes of mitigating threats
+- **Assessment** — In-lab team demonstration with individual Q&A
+
+---
+
+<div align="center">
+  <sub>Built with Graylog · OpenSearch · MongoDB · Docker · Python · React · Claude</sub>
+</div>
